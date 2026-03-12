@@ -342,6 +342,42 @@ $user_id = $_SESSION['user_id'];
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .chat-media {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 5px 0;
+            display: block;
+            cursor: pointer;
+        }
+
+        .file-attachment {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 5px;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .message.sent .file-attachment {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .media-preview-bar {
+            padding: 5px 20px;
+            background: #fff3e0;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85em;
+            border-top: 1px solid #ffe0b2;
+        }
     </style>
 </head>
 <body>
@@ -374,12 +410,16 @@ $user_id = $_SESSION['user_id'];
             </div>
         </div>
         
-        <div class="typing-indicator" id="typingIndicator">
-            <div class="spinner" style="width: 12px; height: 12px; margin-right: 8px;"></div>
-            <span id="typingText">Someone is typing...</span>
+        <div class="media-preview-bar" id="mediaPreviewBar">
+            <span id="mediaFileName">No file selected</span>
+            <button onclick="clearSelectedFile()" style="background:none; border:none; color:#e65100; cursor:pointer; font-weight:bold;">✕</button>
         </div>
-        
+
         <div class="chat-input-container">
+            <input type="file" id="mediaInput" style="display:none" accept="image/*,.pdf,.doc,.docx,.txt">
+            <button class="send-btn" style="background:#f0f0f0; color:#666; width:40px; height:40px; margin-right:5px;" onclick="document.getElementById('mediaInput').click()">
+                📎
+            </button>
             <input type="text" 
                    class="message-input" 
                    id="messageInput" 
@@ -419,6 +459,11 @@ $user_id = $_SESSION['user_id'];
         const notification = document.getElementById('notification');
         const userCountText = document.getElementById('userCountText');
         const connectionStatus = document.getElementById('connectionStatus');
+        const mediaInput = document.getElementById('mediaInput');
+        const mediaPreviewBar = document.getElementById('mediaPreviewBar');
+        const mediaFileName = document.getElementById('mediaFileName');
+        
+        let selectedFile = null;
         
         // Initialize chat
         initializeChat();
@@ -468,6 +513,16 @@ $user_id = $_SESSION['user_id'];
                         sendTypingIndicator(false);
                     }
                 }, 1500);
+            });
+
+            // Media input listener
+            mediaInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    selectedFile = e.target.files[0];
+                    mediaFileName.textContent = `📎 ${selectedFile.name}`;
+                    mediaPreviewBar.style.display = 'flex';
+                    messageInput.focus();
+                }
             });
             
             // Clear typing when input loses focus
@@ -602,9 +657,24 @@ $user_id = $_SESSION['user_id'];
                 // Format time
                 const time = formatTime(msg.timestamp);
                 
+                let fileContent = '';
+                if (msg.file) {
+                    if (msg.file.type === 'image') {
+                        fileContent = `<img src="${msg.file.path}" class="chat-media" onclick="window.open(this.src, '_blank')">`;
+                    } else {
+                        fileContent = `
+                            <a href="${msg.file.path}" target="_blank" class="file-attachment">
+                                <span>📄 ${msg.file.name}</span>
+                                <small>(${Math.round(msg.file.size / 1024)} KB)</small>
+                            </a>
+                        `;
+                    }
+                }
+
                 // Create message content
                 messageDiv.innerHTML = `
-                    <div>${escapeHtml(msg.message)}</div>
+                    ${fileContent}
+                    <div style="${msg.file ? 'margin-top:5px;' : ''}">${escapeHtml(msg.message)}</div>
                     <span class="message-time">${time}${isOwnMessage ? '<span class="message-status">✓</span>' : ''}</span>
                 `;
                 
@@ -651,19 +721,22 @@ $user_id = $_SESSION['user_id'];
         async function sendMessage() {
             const message = messageInput.value.trim();
             
-            if (!message || !isOnline) return;
+            if ((!message && !selectedFile) || !isOnline) return;
             
             console.log('Sending message:', message);
             
             // Disable send button and show loading
             sendBtn.disabled = true;
+            const originalBtnHtml = sendBtn.innerHTML;
             sendBtn.innerHTML = '<div class="spinner"></div>';
             
             // Add message to local queue for immediate display
-            addLocalMessage(message);
+            addLocalMessage(message, selectedFile);
             
-            // Clear input
+            // Clear inputs
             messageInput.value = '';
+            const currentFile = selectedFile;
+            clearSelectedFile();
             
             // Stop typing indicator
             if (isTyping) {
@@ -678,6 +751,9 @@ $user_id = $_SESSION['user_id'];
                 formData.append('message', message);
                 formData.append('user_id', userId);
                 formData.append('action', 'send');
+                if (currentFile) {
+                    formData.append('media', currentFile);
+                }
                 
                 const response = await fetch('send.php', {
                     method: 'POST',
@@ -711,11 +787,17 @@ $user_id = $_SESSION['user_id'];
             } finally {
                 // Re-enable send button
                 sendBtn.disabled = false;
-                sendBtn.innerHTML = '<span style="transform: translateY(-1px)">➤</span>';
+                sendBtn.innerHTML = originalBtnHtml;
             }
         }
+
+        function clearSelectedFile() {
+            selectedFile = null;
+            mediaInput.value = '';
+            mediaPreviewBar.style.display = 'none';
+        }
         
-        function addLocalMessage(message) {
+        function addLocalMessage(message, file = null) {
             const container = document.getElementById('chatMessages');
             const emptyChat = container.querySelector('.empty-chat');
             
@@ -725,8 +807,19 @@ $user_id = $_SESSION['user_id'];
             
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message sent';
+            
+            let fileHtml = '';
+            if (file) {
+                if (file.type.startsWith('image/')) {
+                    fileHtml = `<img src="${URL.createObjectURL(file)}" class="chat-media">`;
+                } else {
+                    fileHtml = `<div class="file-attachment">📄 ${file.name}</div>`;
+                }
+            }
+
             messageDiv.innerHTML = `
-                <div>${escapeHtml(message)}</div>
+                ${fileHtml}
+                <div style="${file ? 'margin-top:5px;' : ''}">${escapeHtml(message)}</div>
                 <span class="message-time">Sending...<span class="message-status">⏳</span></span>
             `;
             

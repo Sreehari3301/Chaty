@@ -38,7 +38,8 @@ switch ($action) {
         break;
         
     case 'send':
-        handleSendMessage($chat_file, $room_id, $user_id, $message);
+        $file = $_FILES['media'] ?? null;
+        handleSendMessage($chat_file, $room_id, $user_id, $message, $file);
         break;
         
     default:
@@ -90,13 +91,49 @@ function handleLeave($users_file, $user_id) {
     echo json_encode(['status' => 'success']);
 }
 
-function handleSendMessage($chat_file, $room_id, $user_id, $message) {
-    if (empty($message) || empty($user_id)) {
+function handleSendMessage($chat_file, $room_id, $user_id, $message, $file = null) {
+    if (empty($message) && empty($file) || empty($user_id)) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Message or user ID missing']);
         return;
     }
     
+    $file_data = null;
+    if ($file && $file['error'] === UPLOAD_ERR_OK) {
+        $upload_dir = 'uploads/' . $room_id . '/';
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+        
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'txt'];
+        
+        if (!in_array(strtolower($ext), $allowed)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'File type not allowed']);
+            return;
+        }
+        
+        // Limit to 5MB
+        if ($file['size'] > 5 * 1024 * 1024) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'File too large (max 5MB)']);
+            return;
+        }
+        
+        $file_name = uniqid('media_') . '.' . $ext;
+        $file_path = $upload_dir . $file_name;
+        
+        if (move_uploaded_file($file['tmp_name'], $file_path)) {
+            $file_data = [
+                'name' => $file['name'],
+                'path' => $file_path,
+                'type' => strpos($file['type'], 'image/') === 0 ? 'image' : 'file',
+                'size' => $file['size']
+            ];
+        }
+    }
+
     $messages = [];
     if (file_exists($chat_file)) {
         $content = file_get_contents($chat_file);
@@ -110,7 +147,8 @@ function handleSendMessage($chat_file, $room_id, $user_id, $message) {
         'id' => uniqid(),
         'message' => htmlspecialchars($message, ENT_QUOTES, 'UTF-8'),
         'user_id' => $user_id,
-        'timestamp' => date('Y-m-d H:i:s')
+        'timestamp' => date('Y-m-d H:i:s'),
+        'file' => $file_data
     ];
     
     $messages[] = $new_message;
