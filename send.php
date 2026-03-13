@@ -114,10 +114,10 @@ function handleSendMessage($chat_file, $room_id, $user_id, $message, $file = nul
             return;
         }
         
-        // Limit to 5MB
-        if ($file['size'] > 5 * 1024 * 1024) {
+        // Limit to 100MB
+        if ($file['size'] > 100 * 1024 * 1024) {
             http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'File too large (max 5MB)']);
+            echo json_encode(['status' => 'error', 'message' => 'File too large (max 100MB)']);
             return;
         }
         
