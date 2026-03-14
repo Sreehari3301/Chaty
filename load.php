@@ -23,10 +23,16 @@ $cursor = $messagesCollection->find(['room_id' => $room_id], [
 ]);
 
 $messages = array_reverse(iterator_to_array($cursor));
-// remove mongo internal _id for json encoding
+// convert from BSON document to array and remove mongo internal _id for json encoding
 $messages = array_map(function($msg) {
-    unset($msg['_id']);
-    return $msg;
+    // BSONDocument to array
+    $arr = (array)$msg;
+    // Handle nested BSON objects (like the file) if they exist
+    if (isset($arr['file']) && is_object($arr['file'])) {
+        $arr['file'] = (array)$arr['file'];
+    }
+    unset($arr['_id']);
+    return $arr;
 }, $messages);
 
 // Check typing status
