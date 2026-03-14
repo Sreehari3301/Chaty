@@ -15,52 +15,60 @@ if (empty($room_id) || strlen($room_id) !== 8) {
     die('Invalid room ID');
 }
 
-// Load messages from MongoDB
-// Get the last 200 messages sorted by timestamp ascending
-$cursor = $messagesCollection->find(['room_id' => $room_id], [
-    'sort' => ['timestamp_ms' => -1],
-    'limit' => 200
-]);
-
-$messages = array_reverse(iterator_to_array($cursor));
-// convert from BSON document to array and remove mongo internal _id for json encoding
-$messages = array_map(function($msg) {
-    // BSONDocument to array
-    $arr = (array)$msg;
-    // Handle nested BSON objects (like the file) if they exist
-    if (isset($arr['file']) && is_object($arr['file'])) {
-        $arr['file'] = (array)$arr['file'];
+try {
+    // Load messages from MongoDB
+    // Get the last 200 messages sorted by timestamp ascending
+    $cursor = $messagesCollection->find(['room_id' => $room_id], [
+        'sort' => ['timestamp_ms' => -1],
+        'limit' => 200,
+        'typeMap' => ['root' => 'array', 'document' => 'array', 'array' => 'array']
+    ]);
+    
+    $messages = array_reverse(iterator_to_array($cursor));
+    // remove mongo internal _id for json encoding
+    $messages = array_map(function($msg) {
+        unset($msg['_id']);
+        return $msg;
+    }, $messages);
+    
+    // Check typing status
+    $typing = false;
+    $typing_users = [];
+    $active_threshold = time() - 5; // 5 seconds ago
+    
+    $typing_cursor = $typingCollection->find([
+        'room_id' => $room_id,
+        'timestamp' => ['$gte' => $active_threshold]
+    ], [
+        'typeMap' => ['root' => 'array', 'document' => 'array', 'array' => 'array']
+    ]);
+    
+    foreach ($typing_cursor as $typing_doc) {
+        $typing = true;
+        $typing_users[] = $typing_doc['user_id'];
     }
-    unset($arr['_id']);
-    return $arr;
-}, $messages);
+    
+    // Clean up old entries
+    $typingCollection->deleteMany(['timestamp' => ['$lt' => $active_threshold]]);
+    
+    // Return JSON response
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'success',
+        'messages' => array_values($messages),
+        'typing' => $typing,
+        'typing_users' => $typing_users,
+        'room' => $room_id,
+        'timestamp' => time(),
+        'count' => count($messages)
+    ]);
 
-// Check typing status
-$typing = false;
-$typing_users = [];
-$active_threshold = time() - 5; // 5 seconds ago
-
-$typing_cursor = $typingCollection->find([
-    'room_id' => $room_id,
-    'timestamp' => ['$gte' => $active_threshold]
-]);
-
-foreach ($typing_cursor as $typing_doc) {
-    $typing = true;
-    $typing_users[] = $typing_doc['user_id'];
+} catch (Exception $e) {
+    error_log("MongoDB Error in load.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error', 
+        'message' => 'Database connection failed: ' . $e->getMessage()
+    ]);
 }
-
-// Clean up old entries
-$typingCollection->deleteMany(['timestamp' => ['$lt' => $active_threshold]]);
-
-// Return JSON response
-header('Content-Type: application/json');
-echo json_encode([
-    'messages' => array_values($messages),
-    'typing' => $typing,
-    'typing_users' => $typing_users,
-    'room' => $room_id,
-    'timestamp' => time(),
-    'count' => count($messages)
-]);
 ?>

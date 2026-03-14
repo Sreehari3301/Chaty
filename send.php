@@ -45,25 +45,35 @@ switch ($action) {
 }
 
 function handleTyping($typingCollection, $room_id, $user_id, $typing) {
-    if ($typing === '1') {
-        $typingCollection->updateOne(
-            ['room_id' => $room_id, 'user_id' => $user_id],
-            ['$set' => ['timestamp' => time()]],
-            ['upsert' => true]
-        );
-    } else {
-        $typingCollection->deleteOne(['room_id' => $room_id, 'user_id' => $user_id]);
+    try {
+        if ($typing === '1') {
+            $typingCollection->updateOne(
+                ['room_id' => $room_id, 'user_id' => $user_id],
+                ['$set' => ['timestamp' => time()]],
+                ['upsert' => true]
+            );
+        } else {
+            $typingCollection->deleteOne(['room_id' => $room_id, 'user_id' => $user_id]);
+        }
+        
+        // Clean old entries (older than 10 seconds)
+        $typingCollection->deleteMany(['timestamp' => ['$lt' => time() - 10]]);
+        
+        echo json_encode(['status' => 'success']);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
     }
-    
-    // Clean old entries (older than 10 seconds)
-    $typingCollection->deleteMany(['timestamp' => ['$lt' => time() - 10]]);
-    
-    echo json_encode(['status' => 'success']);
 }
 
 function handleLeave($usersCollection, $room_id, $user_id) {
-    $usersCollection->deleteOne(['room_id' => $room_id, 'user_id' => $user_id]);
-    echo json_encode(['status' => 'success']);
+    try {
+        $usersCollection->deleteOne(['room_id' => $room_id, 'user_id' => $user_id]);
+        echo json_encode(['status' => 'success']);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
+    }
 }
 
 function handleSendMessage($messagesCollection, $room_id, $user_id, $message, $file = null) {
