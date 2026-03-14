@@ -60,7 +60,7 @@ function handleTyping($typingCollection, $room_id, $user_id, $typing) {
         $typingCollection->deleteMany(['timestamp' => ['$lt' => time() - 10]]);
         
         echo json_encode(['status' => 'success']);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
     }
@@ -70,7 +70,7 @@ function handleLeave($usersCollection, $room_id, $user_id) {
     try {
         $usersCollection->deleteOne(['room_id' => $room_id, 'user_id' => $user_id]);
         echo json_encode(['status' => 'success']);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'DB Error: ' . $e->getMessage()]);
     }

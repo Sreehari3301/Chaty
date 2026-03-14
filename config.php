@@ -17,10 +17,10 @@ try {
     $typingCollection = $db->typing;
     $usersCollection = $db->users;
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     error_log("Failed to connect to MongoDB: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed: ' . $e->getMessage()]);
     exit();
 }
 ?>
