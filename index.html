@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGO - Start a Chat!</title>
+    <title>Chaty - Start a Chat!</title>
     <style>
         /* Same CSS as before */
         * {
@@ -12,7 +13,7 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
@@ -22,17 +23,17 @@
             padding: 20px;
             position: relative;
         }
-        
+
         .container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
             width: 100%;
             max-width: 500px;
             text-align: center;
         }
-        
+
         .logo {
             color: #667eea;
             font-size: 2.5em;
@@ -40,13 +41,13 @@
             margin-bottom: 10px;
             letter-spacing: 2px;
         }
-        
+
         .tagline {
             color: #666;
             margin-bottom: 30px;
             font-size: 1.1em;
         }
-        
+
         .generate-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -61,12 +62,12 @@
             letter-spacing: 1px;
             width: 100%;
         }
-        
+
         .generate-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
         }
-        
+
         .link-container {
             margin-top: 30px;
             padding: 20px;
@@ -74,12 +75,12 @@
             border-radius: 10px;
             display: none;
         }
-        
+
         .link-container.active {
             display: block;
             animation: fadeIn 0.5s;
         }
-        
+
         .invite-link {
             background: white;
             border: 2px dashed #667eea;
@@ -93,7 +94,7 @@
             overflow-x: auto;
             white-space: nowrap;
         }
-        
+
         .copy-btn {
             background: #4CAF50;
             color: white;
@@ -106,11 +107,11 @@
             font-size: 1em;
             width: 100%;
         }
-        
+
         .copy-btn:hover {
             background: #45a049;
         }
-        
+
         .instructions {
             margin-top: 25px;
             text-align: left;
@@ -119,27 +120,34 @@
             border-radius: 10px;
             border-left: 4px solid #667eea;
         }
-        
+
         .instructions h3 {
             color: #667eea;
             margin-bottom: 10px;
         }
-        
+
         .instructions ol {
             padding-left: 20px;
             color: #555;
         }
-        
+
         .instructions li {
             margin: 8px 0;
             line-height: 1.5;
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         .share-options {
             margin-top: 15px;
             display: flex;
@@ -147,7 +155,7 @@
             justify-content: center;
             flex-wrap: wrap;
         }
-        
+
         .share-btn {
             padding: 10px 20px;
             border: 1px solid #ddd;
@@ -163,16 +171,30 @@
             flex: 1;
             min-width: 100px;
         }
-        
+
         .share-btn:hover {
             background: #f5f5f5;
             transform: translateY(-2px);
         }
-        
-        .share-btn.whatsapp:hover { background: #25D366; color: white; border-color: #25D366; }
-        .share-btn.telegram:hover { background: #0088cc; color: white; border-color: #0088cc; }
-        .share-btn.email:hover { background: #EA4335; color: white; border-color: #EA4335; }
-        
+
+        .share-btn.whatsapp:hover {
+            background: #25D366;
+            color: white;
+            border-color: #25D366;
+        }
+
+        .share-btn.telegram:hover {
+            background: #0088cc;
+            color: white;
+            border-color: #0088cc;
+        }
+
+        .share-btn.email:hover {
+            background: #EA4335;
+            color: white;
+            border-color: #EA4335;
+        }
+
         /* Developer Credit - Added without affecting existing design */
         .developer-credit {
             position: absolute;
@@ -188,7 +210,7 @@
             transition: all 0.3s ease;
             z-index: 10;
         }
-        
+
         .developer-credit:hover {
             background: rgba(0, 0, 0, 0.3);
             color: white;
@@ -197,7 +219,7 @@
         }
 
         /* ========== RESPONSIVE DESIGN ========== */
-        
+
         /* For tablets and smaller laptops */
         @media (max-width: 768px) {
             .container {
@@ -205,28 +227,28 @@
                 margin: 10px;
                 border-radius: 15px;
             }
-            
+
             .logo {
                 font-size: 2.2em;
                 letter-spacing: 1px;
             }
-            
+
             .tagline {
                 font-size: 1em;
                 margin-bottom: 25px;
             }
-            
+
             .generate-btn {
                 padding: 14px 28px;
                 font-size: 1.1em;
             }
-            
+
             .share-btn {
                 padding: 8px 16px;
                 font-size: 0.85em;
                 min-width: 90px;
             }
-            
+
             .developer-credit {
                 font-size: 13px;
                 padding: 6px 12px;
@@ -234,7 +256,7 @@
                 right: 10px;
             }
         }
-        
+
         /* For mobile phones */
         @media (max-width: 480px) {
             body {
@@ -242,75 +264,75 @@
                 align-items: flex-start;
                 min-height: calc(100vh - 30px);
             }
-            
+
             .container {
                 padding: 25px 20px;
                 border-radius: 15px;
                 max-width: 100%;
                 margin-top: 20px;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             }
-            
+
             .logo {
                 font-size: 1.8em;
                 letter-spacing: 0;
             }
-            
+
             .tagline {
                 font-size: 0.95em;
                 margin-bottom: 20px;
                 line-height: 1.4;
             }
-            
+
             .generate-btn {
                 padding: 16px 24px;
                 font-size: 1em;
                 margin: 15px 0;
                 border-radius: 40px;
             }
-            
+
             .link-container {
                 padding: 15px;
                 margin-top: 20px;
             }
-            
+
             .invite-link {
                 padding: 12px;
                 font-size: 0.85em;
                 margin: 12px 0;
                 border-radius: 8px;
             }
-            
+
             .copy-btn {
                 padding: 12px 20px;
                 font-size: 0.95em;
             }
-            
+
             .instructions {
                 padding: 12px;
                 margin-top: 20px;
             }
-            
+
             .instructions h3 {
                 font-size: 1.1em;
             }
-            
+
             .instructions li {
                 font-size: 0.9em;
                 line-height: 1.4;
             }
-            
+
             .share-options {
                 flex-direction: column;
                 gap: 8px;
             }
-            
+
             .share-btn {
                 width: 100%;
                 padding: 10px;
                 justify-content: center;
             }
-            
+
             .developer-credit {
                 position: fixed;
                 bottom: 10px;
@@ -321,74 +343,74 @@
                 padding: 6px 10px;
                 background: rgba(0, 0, 0, 0.25);
             }
-            
+
             /* Touch-friendly hover alternatives */
             .generate-btn:active {
                 transform: translateY(-1px);
                 box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
             }
-            
+
             .copy-btn:active {
                 background: #3d8b40;
             }
-            
+
             .share-btn:active {
                 transform: translateY(-1px);
                 background: #f0f0f0;
             }
         }
-        
+
         /* For very small phones */
         @media (max-width: 360px) {
             .container {
                 padding: 20px 15px;
             }
-            
+
             .logo {
                 font-size: 1.6em;
             }
-            
+
             .tagline {
                 font-size: 0.9em;
             }
-            
+
             .generate-btn {
                 font-size: 0.95em;
                 padding: 14px 20px;
             }
-            
+
             .share-btn {
                 font-size: 0.8em;
                 padding: 8px 12px;
             }
-            
+
             .instructions {
                 padding: 10px;
             }
-            
+
             .instructions ol {
                 padding-left: 15px;
             }
         }
-        
+
         /* For landscape orientation on mobile */
         @media (max-height: 600px) and (orientation: landscape) {
             body {
                 padding: 10px;
                 align-items: flex-start;
             }
-            
+
             .container {
                 padding: 20px;
                 margin-top: 10px;
                 max-height: 90vh;
                 overflow-y: auto;
             }
-            
+
             .instructions {
                 margin-top: 15px;
             }
-            
+
             .developer-credit {
                 position: fixed;
                 bottom: 5px;
@@ -397,75 +419,81 @@
                 padding: 4px 8px;
             }
         }
-        
+
         /* For large screens (PC) */
         @media (min-width: 1200px) {
             .container {
                 max-width: 550px;
                 padding: 50px;
             }
-            
+
             .logo {
                 font-size: 3em;
             }
-            
+
             .tagline {
                 font-size: 1.2em;
             }
-            
+
             .generate-btn {
                 font-size: 1.3em;
                 padding: 18px 36px;
             }
-            
+
             .developer-credit {
                 font-size: 16px;
                 padding: 10px 20px;
             }
         }
-        
+
         /* For extra large screens */
         @media (min-width: 1600px) {
             .container {
                 max-width: 600px;
                 padding: 60px;
             }
-            
+
             .logo {
                 font-size: 3.5em;
             }
-            
+
             .generate-btn {
                 font-size: 1.4em;
                 padding: 20px 40px;
             }
         }
-        
+
         /* Accessibility improvements */
         @media (prefers-reduced-motion: reduce) {
+
             .generate-btn,
             .copy-btn,
             .share-btn,
             .developer-credit {
                 transition: none;
             }
-            
+
             @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
+                from {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
             }
         }
-        
+
         /* High contrast mode support */
         @media (prefers-contrast: high) {
             .generate-btn {
                 background: #4f46e5;
             }
-            
+
             .copy-btn {
                 background: #2e7d32;
             }
-            
+
             .developer-credit {
                 background: #000;
                 color: #fff;
@@ -473,28 +501,29 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Developer Credit - Added without changing existing HTML -->
     <div class="developer-credit">
         Developed by Sreehari R
     </div>
-    
+
     <div class="container">
         <div class="logo">Chaty</div>
         <p class="tagline">Create a private chat room and invite friends!</p>
-        
+
         <button class="generate-btn" id="generateBtn">
             🚀 Generate Chat Link
         </button>
-        
+
         <div class="link-container" id="linkContainer">
             <h3>Your Chat Invite Link:</h3>
             <div class="invite-link" id="inviteLink">Generating...</div>
-            
+
             <button class="copy-btn" id="copyBtn">
                 📋 Copy Link
             </button>
-            
+
             <div class="share-options">
                 <button class="share-btn whatsapp" id="whatsappBtn">
                     WhatsApp
@@ -507,7 +536,7 @@
                 </button>
             </div>
         </div>
-        
+
         <div class="instructions">
             <h3>How it works:</h3>
             <ol>
@@ -521,7 +550,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const generateBtn = document.getElementById('generateBtn');
             const linkContainer = document.getElementById('linkContainer');
             const inviteLink = document.getElementById('inviteLink');
@@ -529,33 +558,33 @@
             const whatsappBtn = document.getElementById('whatsappBtn');
             const telegramBtn = document.getElementById('telegramBtn');
             const emailBtn = document.getElementById('emailBtn');
-            
+
             let currentChatUrl = '';
-            
-            generateBtn.addEventListener('click', function() {
+
+            generateBtn.addEventListener('click', function () {
                 // Generate a unique 8-character room ID
                 const roomId = Math.random().toString(36).substring(2, 10);
                 // Create the chat URL relative to the current page
                 const chatUrl = `chat.php?room=${roomId}`;
                 const absoluteChatUrl = window.location.href.replace('index.html', '') + chatUrl;
-                
+
                 // Display the link
                 inviteLink.textContent = absoluteChatUrl;
                 linkContainer.classList.add('active');
                 currentChatUrl = absoluteChatUrl;
-                
+
                 // Store room ID for session
                 sessionStorage.setItem('chatgo_room_owner', roomId);
-                
+
                 // Redirect to chat after a delay
                 setTimeout(() => {
                     window.location.href = chatUrl;
                 }, 3000);
             });
-            
-            copyBtn.addEventListener('click', function() {
+
+            copyBtn.addEventListener('click', function () {
                 if (!currentChatUrl) return;
-                
+
                 navigator.clipboard.writeText(currentChatUrl).then(() => {
                     copyBtn.textContent = '✅ Copied!';
                     setTimeout(() => {
@@ -571,18 +600,18 @@
                     }, 2000);
                 });
             });
-            
-            whatsappBtn.addEventListener('click', function() {
+
+            whatsappBtn.addEventListener('click', function () {
                 if (!currentChatUrl) return;
                 window.open(`https://wa.me/?text=${encodeURIComponent(`Join me on ChatGO! ${currentChatUrl}`)}`, '_blank');
             });
-            
-            telegramBtn.addEventListener('click', function() {
+
+            telegramBtn.addEventListener('click', function () {
                 if (!currentChatUrl) return;
                 window.open(`https://t.me/share/url?url=${encodeURIComponent(currentChatUrl)}&text=${encodeURIComponent('Join me on ChatGO!')}`, '_blank');
             });
-            
-            emailBtn.addEventListener('click', function() {
+
+            emailBtn.addEventListener('click', function () {
                 if (!currentChatUrl) return;
                 window.location.href = `mailto:?subject=ChatGO Invitation&body=Join me for a chat! ${encodeURIComponent(currentChatUrl)}`;
             });
@@ -596,11 +625,11 @@
             if (isTouchDevice()) {
                 const buttons = document.querySelectorAll('button');
                 buttons.forEach(button => {
-                    button.addEventListener('touchstart', function() {
+                    button.addEventListener('touchstart', function () {
                         this.style.opacity = '0.8';
                     });
-                    
-                    button.addEventListener('touchend', function() {
+
+                    button.addEventListener('touchend', function () {
                         setTimeout(() => {
                             this.style.opacity = '1';
                         }, 150);
@@ -610,4 +639,5 @@
         });
     </script>
 </body>
+
 </html>

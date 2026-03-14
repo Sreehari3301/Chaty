@@ -573,7 +573,14 @@ $user_id = $_SESSION['user_id'];
                 const response = await fetch(`load.php?room=${roomId}&_=${Date.now()}`);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    // Try to parse the error body for better debugging
+                    try {
+                        const errData = await response.json();
+                        console.error('Server error from load.php:', errData.message || JSON.stringify(errData));
+                        throw new Error(errData.message || `HTTP ${response.status}`);
+                    } catch (parseErr) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
                 }
                 
                 const data = await response.json();
