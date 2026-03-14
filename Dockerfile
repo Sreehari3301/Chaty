@@ -17,8 +17,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY . /var/www/html/
 
 # Install PHP dependencies
-RUN cd /var/www/html/ && composer install --no-dev --optimize-autoloader
-
+RUN cd /var/www/html/ && composer install --no-dev --optimize-autoloader -vvv || cat /var/www/html/composer.json
 
 RUN mkdir -p /var/www/html/chats \
     && chmod -R 777 /var/www/html/chats \
