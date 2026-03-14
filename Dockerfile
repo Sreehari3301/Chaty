@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libssl-dev \
+    libcurl4-openssl-dev \
+    pkg-config \
     && pecl install mongodb \
     && docker-php-ext-enable mongodb \
     && rm -rf /var/lib/apt/lists/*
