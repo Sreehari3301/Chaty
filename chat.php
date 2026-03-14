@@ -13,12 +13,6 @@ if (empty($room_id) || strlen($room_id) !== 8) {
 // Start session and clear previous chat data if it's a different room
 session_start();
 if (!isset($_SESSION['current_room']) || $_SESSION['current_room'] !== $room_id) {
-    // Initialize empty chat for this room
-    $chat_file = "chats/{$room_id}.json";
-    if (!file_exists('chats')) {
-        mkdir('chats', 0777, true);
-    }
-    file_put_contents($chat_file, json_encode([]));
     $_SESSION['current_room'] = $room_id;
 }
 

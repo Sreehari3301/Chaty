@@ -3,6 +3,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+require_once __DIR__ . '/config.php';
+
 // Get room ID
 $room_id = isset($_GET['room']) ? $_GET['room'] : '';
 error_log("load.php called for room: $room_id");
@@ -13,62 +15,42 @@ if (empty($room_id) || strlen($room_id) !== 8) {
     die('Invalid room ID');
 }
 
-$chat_file = "chats/{$room_id}.json";
-$typing_file = "chats/{$room_id}_typing.json";
+// Load messages from MongoDB
+// Get the last 200 messages sorted by timestamp ascending
+$cursor = $messagesCollection->find(['room_id' => $room_id], [
+    'sort' => ['timestamp_ms' => -1],
+    'limit' => 200
+]);
 
-// Ensure chats directory exists
-if (!file_exists('chats')) {
-    mkdir('chats', 0777, true);
-}
-
-// Load messages
-$messages = [];
-if (file_exists($chat_file)) {
-    $content = file_get_contents($chat_file);
-    if (!empty($content)) {
-        $messages = json_decode($content, true);
-        if (!is_array($messages)) {
-            $messages = [];
-            file_put_contents($chat_file, json_encode($messages));
-        }
-    }
-} else {
-    // Create empty chat file
-    file_put_contents($chat_file, json_encode($messages));
-}
+$messages = array_reverse(iterator_to_array($cursor));
+// remove mongo internal _id for json encoding
+$messages = array_map(function($msg) {
+    unset($msg['_id']);
+    return $msg;
+}, $messages);
 
 // Check typing status
 $typing = false;
 $typing_users = [];
-if (file_exists($typing_file)) {
-    $typing_content = file_get_contents($typing_file);
-    if (!empty($typing_content)) {
-        $typing_data = json_decode($typing_content, true);
-        if (is_array($typing_data)) {
-            // Remove old typing indicators
-            foreach ($typing_data as $user => $timestamp) {
-                if (time() - $timestamp <= 5) {
-                    $typing = true;
-                    $typing_users[] = $user;
-                }
-            }
-            
-            // Clean up old entries
-            $active_typing = [];
-            foreach ($typing_data as $user => $timestamp) {
-                if (time() - $timestamp <= 5) {
-                    $active_typing[$user] = $timestamp;
-                }
-            }
-            file_put_contents($typing_file, json_encode($active_typing));
-        }
-    }
+$active_threshold = time() - 5; // 5 seconds ago
+
+$typing_cursor = $typingCollection->find([
+    'room_id' => $room_id,
+    'timestamp' => ['$gte' => $active_threshold]
+]);
+
+foreach ($typing_cursor as $typing_doc) {
+    $typing = true;
+    $typing_users[] = $typing_doc['user_id'];
 }
+
+// Clean up old entries
+$typingCollection->deleteMany(['timestamp' => ['$lt' => $active_threshold]]);
 
 // Return JSON response
 header('Content-Type: application/json');
 echo json_encode([
-    'messages' => $messages,
+    'messages' => array_values($messages),
     'typing' => $typing,
     'typing_users' => $typing_users,
     'room' => $room_id,

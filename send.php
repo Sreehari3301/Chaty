@@ -1,7 +1,9 @@
 <?php
-// send.php - Updated version
+// send.php - MongoDB version
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+require_once __DIR__ . '/config.php';
 
 // Get parameters
 $room_id = $_POST['room'] ?? $_GET['room'] ?? '';
@@ -18,80 +20,53 @@ if (empty($room_id) || strlen($room_id) !== 8) {
     exit();
 }
 
-$chat_file = "chats/{$room_id}.json";
-$typing_file = "chats/{$room_id}_typing.json";
-$users_file = "chats/{$room_id}_users.json";
-
-// Ensure chats directory exists
-if (!file_exists('chats')) {
-    mkdir('chats', 0777, true);
-}
-
 // Handle different actions
 switch ($action) {
     case 'typing':
-        handleTyping($typing_file, $user_id, $typing);
+        handleTyping($typingCollection, $room_id, $user_id, $typing);
         break;
         
     case 'leave':
-        handleLeave($users_file, $user_id);
+        handleLeave($usersCollection, $room_id, $user_id);
         break;
         
     case 'send':
         $file = $_FILES['media'] ?? null;
-        handleSendMessage($chat_file, $room_id, $user_id, $message, $file);
+        handleSendMessage($messagesCollection, $room_id, $user_id, $message, $file);
         break;
         
     default:
         if ($clear) {
-            handleClearChat($chat_file, $typing_file, $users_file);
+            handleClearChat($messagesCollection, $typingCollection, $usersCollection, $room_id);
         } else {
             http_response_code(400);
             echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
         }
 }
 
-function handleTyping($typing_file, $user_id, $typing) {
-    $typing_data = [];
-    if (file_exists($typing_file)) {
-        $content = file_get_contents($typing_file);
-        if ($content) {
-            $typing_data = json_decode($content, true) ?: [];
-        }
-    }
-    
+function handleTyping($typingCollection, $room_id, $user_id, $typing) {
     if ($typing === '1') {
-        $typing_data[$user_id] = time();
+        $typingCollection->updateOne(
+            ['room_id' => $room_id, 'user_id' => $user_id],
+            ['$set' => ['timestamp' => time()]],
+            ['upsert' => true]
+        );
     } else {
-        unset($typing_data[$user_id]);
+        $typingCollection->deleteOne(['room_id' => $room_id, 'user_id' => $user_id]);
     }
     
     // Clean old entries (older than 10 seconds)
-    foreach ($typing_data as $key => $timestamp) {
-        if (time() - $timestamp > 10) {
-            unset($typing_data[$key]);
-        }
-    }
+    $typingCollection->deleteMany(['timestamp' => ['$lt' => time() - 10]]);
     
-    file_put_contents($typing_file, json_encode($typing_data));
     echo json_encode(['status' => 'success']);
 }
 
-function handleLeave($users_file, $user_id) {
-    $users = [];
-    if (file_exists($users_file)) {
-        $content = file_get_contents($users_file);
-        if ($content) {
-            $users = json_decode($content, true) ?: [];
-        }
-    }
-    
-    unset($users[$user_id]);
-    file_put_contents($users_file, json_encode($users));
+function handleLeave($usersCollection, $room_id, $user_id) {
+    $usersCollection->deleteOne(['room_id' => $room_id, 'user_id' => $user_id]);
     echo json_encode(['status' => 'success']);
 }
 
-function handleSendMessage($chat_file, $room_id, $user_id, $message, $file = null) {
+function handleSendMessage($messagesCollection, $room_id, $user_id, $message, $file = null) {
     if (empty($message) && empty($file) || empty($user_id)) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Message or user ID missing']);
@@ -134,48 +109,50 @@ function handleSendMessage($chat_file, $room_id, $user_id, $message, $file = nul
         }
     }
 
-    $messages = [];
-    if (file_exists($chat_file)) {
-        $content = file_get_contents($chat_file);
-        if ($content) {
-            $messages = json_decode($content, true) ?: [];
-        }
-    }
-    
+    $message_id = uniqid();
     // Add new message
     $new_message = [
-        'id' => uniqid(),
+        'id' => $message_id,
+        'room_id' => $room_id,
         'message' => htmlspecialchars($message, ENT_QUOTES, 'UTF-8'),
         'user_id' => $user_id,
         'timestamp' => date('Y-m-d H:i:s'),
+        'timestamp_ms' => round(microtime(true) * 1000),
         'file' => $file_data
     ];
     
-    $messages[] = $new_message;
-    
-    // Limit to last 200 messages
-    if (count($messages) > 200) {
-        $messages = array_slice($messages, -200);
-    }
-    
-    if (file_put_contents($chat_file, json_encode($messages))) {
-        echo json_encode(['status' => 'success', 'message_id' => $new_message['id']]);
-    } else {
+    try {
+        $messagesCollection->insertOne($new_message);
+        
+        // Keep only last 200 messages for this room
+        $count = $messagesCollection->countDocuments(['room_id' => $room_id]);
+        if ($count > 200) {
+            // Find messages to delete (the oldest ones)
+            $messagesToDelete = $count - 200;
+            $cursor = $messagesCollection->find(['room_id' => $room_id], [
+                'sort' => ['timestamp_ms' => 1],
+                'limit' => $messagesToDelete
+            ]);
+            $idsToDelete = [];
+            foreach ($cursor as $doc) {
+                $idsToDelete[] = $doc['_id'];
+            }
+            if (!empty($idsToDelete)) {
+                $messagesCollection->deleteMany(['_id' => ['$in' => $idsToDelete]]);
+            }
+        }
+        
+        echo json_encode(['status' => 'success', 'message_id' => $message_id]);
+    } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Failed to save message']);
     }
 }
 
-function handleClearChat($chat_file, $typing_file, $users_file) {
-    file_put_contents($chat_file, json_encode([]));
-    
-    if (file_exists($typing_file)) {
-        unlink($typing_file);
-    }
-    
-    if (file_exists($users_file)) {
-        unlink($users_file);
-    }
+function handleClearChat($messagesCollection, $typingCollection, $usersCollection, $room_id) {
+    $messagesCollection->deleteMany(['room_id' => $room_id]);
+    $typingCollection->deleteMany(['room_id' => $room_id]);
+    $usersCollection->deleteMany(['room_id' => $room_id]);
     
     echo json_encode(['status' => 'success', 'cleared' => true]);
 }
