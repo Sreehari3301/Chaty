@@ -1,4 +1,9 @@
 <?php
+if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Vendor autoload missing. Composer install failed during build.']);
+    exit();
+}
 require_once __DIR__ . '/vendor/autoload.php';
 
 use MongoDB\Client;
