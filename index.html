@@ -603,17 +603,17 @@
 
             whatsappBtn.addEventListener('click', function () {
                 if (!currentChatUrl) return;
-                window.open(`https://wa.me/?text=${encodeURIComponent(`Join me on ChatGO! ${currentChatUrl}`)}`, '_blank');
+                window.open(`https://wa.me/?text=${encodeURIComponent(`Join me on Chaty! ${currentChatUrl}`)}`, '_blank');
             });
 
             telegramBtn.addEventListener('click', function () {
                 if (!currentChatUrl) return;
-                window.open(`https://t.me/share/url?url=${encodeURIComponent(currentChatUrl)}&text=${encodeURIComponent('Join me on ChatGO!')}`, '_blank');
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(currentChatUrl)}&text=${encodeURIComponent('Join me on Chaty!')}`, '_blank');
             });
 
             emailBtn.addEventListener('click', function () {
                 if (!currentChatUrl) return;
-                window.location.href = `mailto:?subject=ChatGO Invitation&body=Join me for a chat! ${encodeURIComponent(currentChatUrl)}`;
+                window.location.href = `mailto:?subject=Chaty Invitation&body=Join me for a chat! ${encodeURIComponent(currentChatUrl)}`;
             });
 
             // Touch device detection
