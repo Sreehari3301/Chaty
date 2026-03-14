@@ -1,24 +1,25 @@
 FROM php:8.2-apache
 
-# Install dependencies for Composer and MongoDB extension
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libssl-dev \
     libcurl4-openssl-dev \
     pkg-config \
-    && pecl install mongodb \
-    && docker-php-ext-enable mongodb \
     && rm -rf /var/lib/apt/lists/*
+
+# Install MongoDB PHP extension separately
+RUN pecl install mongodb && docker-php-ext-enable mongodb
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY . /var/www/html/
 
-# Install PHP dependencies
+# Install PHP dependencies - ignore platform reqs since ext-mongodb is already installed above
 ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN cd /var/www/html/ && composer install --no-dev --optimize-autoloader --no-interaction
+RUN cd /var/www/html/ && composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 RUN mkdir -p /var/www/html/chats \
     && chmod -R 777 /var/www/html/chats \
