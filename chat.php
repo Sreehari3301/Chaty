@@ -27,7 +27,7 @@ $user_id = $_SESSION['user_id'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGO - Room: <?php echo substr($room_id, 0, 4) . '...'; ?></title>
+    <title>Chaty - Room: <?php echo substr($room_id, 0, 4) . '...'; ?></title>
     <style>
         * {
             margin: 0;
@@ -377,7 +377,7 @@ $user_id = $_SESSION['user_id'];
 <body>
     <div class="header">
         <div class="logo">
-            💬 ChatGO
+            💬 Chaty
         </div>
         <div class="room-info">
             <div class="room-id">Room: <?php echo $room_id; ?></div>
